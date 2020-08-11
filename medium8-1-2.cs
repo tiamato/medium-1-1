@@ -42,11 +42,6 @@ namespace Task
                 Value = 0;
             }
         }
-
-        public bool Equals(Coordinate coordinate)
-        {
-            return Value == coordinate.Value;
-        }
     }
 
     public class GameObject

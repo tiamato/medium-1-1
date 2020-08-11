@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Task
 {
@@ -7,17 +8,20 @@ namespace Task
     {
         private static void Main()
         {
-            GameObjectList gameObjectList = new GameObjectList();
-            gameObjectList.Add(new GameObject(5, 5, "1", true));
-            gameObjectList.Add(new GameObject(10, 10, "2", true));
-            gameObjectList.Add(new GameObject(15, 15, "3", true));
+            var scene = InitScene();
+            var sceneController = new SceneController(scene);
 
-            while (true)
-            {
-                gameObjectList.KillAllWithCollision();
-                gameObjectList.MoveAll();
-                gameObjectList.PrintAllAlive();
-            }
+            sceneController.StartConsoleGameCycle();
+        }
+
+        private static Scene InitScene()
+        {
+            var scene = new Scene();
+            scene.AddGameObject(new GameObject(5, 5, "1", true));
+            scene.AddGameObject(new GameObject(10, 10, "2", true));
+            scene.AddGameObject(new GameObject(15, 15, "3", true));
+
+            return scene;
         }
     }
 
@@ -30,9 +34,9 @@ namespace Task
             Value = coordinate;
         }
 
-        public void RandomStep(Random random)
+        public void RandomStep(Random random, int stepMinValue, int stepMaxValue)
         {
-            Value += random.Next(-1, 1);
+            Value += random.Next(stepMinValue, stepMaxValue);
             if (Value < 0)
             {
                 Value = 0;
@@ -47,54 +51,87 @@ namespace Task
 
     public class GameObject
     {
-        private readonly Coordinate _x;
-        private readonly Coordinate _y;
-        private readonly string _name;
+        private const int StepMinValueConstant = -1;
+        private const int StepMaxValueConstant = 1;
 
+        public readonly Coordinate XCoordinate;
+        public readonly Coordinate YCoordinate;
+        public readonly string Name;
         public bool IsAlive { private set; get; }
 
         public GameObject(int x, int y, string name, bool isAlive)
         {
-            _x = new Coordinate(x);
-            _y = new Coordinate(y);
-            _name = name;
+            XCoordinate = new Coordinate(x);
+            YCoordinate = new Coordinate(y);
+            Name = name;
             IsAlive = isAlive;
         }
 
-        public void Kill()
+        public void Die()
         {
             IsAlive = false;
         }
 
-        public void RandomStep(Random random)
+        public void RandomStep(Random random, int stepMinValue = StepMinValueConstant, int stepMaxValue = StepMaxValueConstant)
         {
-            _x.RandomStep(random);
-            _y.RandomStep(random);
+            XCoordinate.RandomStep(random, stepMinValue, stepMaxValue);
+            YCoordinate.RandomStep(random, stepMinValue, stepMaxValue);
         }
 
         public bool IsCollisionWith(GameObject gameObject)
         {
-            return _x.Equals(gameObject._x) && _y.Equals(gameObject._y);
-        }
-
-        public void Print()
-        {
-            Console.SetCursorPosition(_x.Value, _y.Value);
-            Console.Write(_name);
+            return XCoordinate.Equals(gameObject.XCoordinate) && YCoordinate.Equals(gameObject.YCoordinate);
         }
     }
 
-    public class GameObjectList
+    public interface IScene
+    {
+        IEnumerable<GameObject> GetAliveItems();
+
+        event EventHandler<EventArgs> DoSceneUpdated;
+
+        void UpdateScene();
+    }
+
+    public class Scene : IScene
     {
         private readonly List<GameObject> _items = new List<GameObject>();
-        private readonly Random _random = new Random();
+        private readonly Random _random;
 
-        public void Add(GameObject gameObject)
+        public event EventHandler<EventArgs> DoSceneUpdated;
+
+        public Scene()
+        {
+            _random = new Random();
+        }
+
+        public void AddGameObject(GameObject gameObject)
         {
             _items.Add(gameObject);
         }
 
-        public void MoveAll()
+        public void UpdateScene()
+        {
+            KillGameObjectsWithCollision();
+            MoveAll();
+
+            DoSceneUpdated?.Invoke(this, new EventArgs());
+        }
+
+        private void KillGameObjectsWithCollision()
+        {
+            var itemsWithCollision = _items
+                .GroupBy(gameObject => new {gameObject.XCoordinate, gameObject.YCoordinate})
+                .Where(grouping => grouping.Count() > 1)
+                .SelectMany(grouping => grouping);
+
+            foreach (var gameObject in itemsWithCollision)
+            {
+                gameObject.Die();
+            }
+        }
+
+        private void MoveAll()
         {
             foreach (var gameObject in _items)
             {
@@ -102,29 +139,54 @@ namespace Task
             }
         }
 
-        public void KillAllWithCollision()
+        public IEnumerable<GameObject> GetAliveItems()
         {
-            for (int i = 0; i < _items.Count; i++)
+            return _items.Where(item => item.IsAlive);
+        }
+    }
+
+    public class SceneController
+    {
+        private readonly IScene _scene;
+        
+        public SceneController(IScene scene)
+        {
+            _scene = scene;
+        }
+
+        public void StartConsoleGameCycle()
+        {
+            var sceneView = new ConsoleView(_scene);
+
+            while (true)
             {
-                for (int j = i + 1; j < _items.Count; j++)
-                {
-                    if (_items[i].IsCollisionWith(_items[j]))
-                    {
-                        _items[i].Kill();
-                        _items[j].Kill();
-                    }
-                }
+                _scene.UpdateScene();
             }
         }
 
-        public void PrintAllAlive()
+    }
+
+    public class ConsoleView
+    {
+        private readonly IScene _scene;
+
+        public ConsoleView(IScene scene)
         {
-            foreach (var gameObject in _items)
+            _scene = scene;
+            _scene.DoSceneUpdated += DoSceneUpdated;
+        }
+
+        private static void PrintGameObject(GameObject gameObject)
+        {
+            Console.SetCursorPosition(gameObject.XCoordinate.Value, gameObject.YCoordinate.Value);
+            Console.Write(gameObject.Name);
+        }
+
+        private void DoSceneUpdated(object sender, EventArgs e)
+        {
+            foreach (var gameObject in _scene.GetAliveItems())
             {
-                if (gameObject.IsAlive)
-                {
-                    gameObject.Print();
-                }
+                PrintGameObject(gameObject);
             }
         }
     }

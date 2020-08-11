@@ -77,11 +77,6 @@ namespace Task
             XCoordinate.RandomStep(random, stepMinValue, stepMaxValue);
             YCoordinate.RandomStep(random, stepMinValue, stepMaxValue);
         }
-
-        public bool IsCollisionWith(GameObject gameObject)
-        {
-            return XCoordinate.Equals(gameObject.XCoordinate) && YCoordinate.Equals(gameObject.YCoordinate);
-        }
     }
 
     public interface IScene

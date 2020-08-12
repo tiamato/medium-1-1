@@ -16,10 +16,12 @@ namespace Task
 
         private static Scene InitScene()
         {
+            var defaultStepRange = new StepRange(-1, 1, -1, 1);
+
             var scene = new Scene();
-            scene.AddGameObject(new GameObject(5, 5, "1", true));
-            scene.AddGameObject(new GameObject(10, 10, "2", true));
-            scene.AddGameObject(new GameObject(15, 15, "3", true));
+            scene.AddGameObject(new GameObject(5, 5, "1", true, defaultStepRange));
+            scene.AddGameObject(new GameObject(10, 10, "2", true, defaultStepRange));
+            scene.AddGameObject(new GameObject(15, 15, "3", true, defaultStepRange));
 
             return scene;
         }
@@ -44,22 +46,38 @@ namespace Task
         }
     }
 
+    public class StepRange
+    {
+        public int MinX { get; }
+        public int MaxX { get; }
+        public int MinY { get; }
+        public int MaxY { get; }
+
+        public StepRange(int minX, int maxX, int minY, int maxY)
+        {
+            MinX = minX;
+            MaxX = maxX;
+            MinY = minY;
+            MaxY = maxY;
+        }
+    }
+
     public class GameObject
     {
-        private const int StepMinValueConstant = -1;
-        private const int StepMaxValueConstant = 1;
-
         public readonly Coordinate XCoordinate;
         public readonly Coordinate YCoordinate;
         public readonly string Name;
         public bool IsAlive { private set; get; }
+        private readonly StepRange _stepRange;
 
-        public GameObject(int x, int y, string name, bool isAlive)
+        public GameObject(int x, int y, string name, bool isAlive, StepRange stepRange)
         {
             XCoordinate = new Coordinate(x);
             YCoordinate = new Coordinate(y);
             Name = name;
             IsAlive = isAlive;
+
+            _stepRange = stepRange;
         }
 
         public void Die()
@@ -67,10 +85,10 @@ namespace Task
             IsAlive = false;
         }
 
-        public void RandomStep(Random random, int stepMinValue = StepMinValueConstant, int stepMaxValue = StepMaxValueConstant)
+        public void RandomStep(Random random)
         {
-            XCoordinate.RandomStep(random, stepMinValue, stepMaxValue);
-            YCoordinate.RandomStep(random, stepMinValue, stepMaxValue);
+            XCoordinate.RandomStep(random, _stepRange.MinX, _stepRange.MaxX);
+            YCoordinate.RandomStep(random, _stepRange.MinY, _stepRange.MaxY);
         }
     }
 

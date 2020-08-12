@@ -78,7 +78,7 @@ namespace Task
     {
         IEnumerable<GameObject> GetAliveItems();
 
-        event EventHandler<EventArgs> DoSceneUpdated;
+        event Action OnSceneUpdated;
 
         void UpdateScene();
     }
@@ -88,7 +88,7 @@ namespace Task
         private readonly List<GameObject> _items = new List<GameObject>();
         private readonly Random _random;
 
-        public event EventHandler<EventArgs> DoSceneUpdated;
+        public event Action OnSceneUpdated;
 
         public Scene()
         {
@@ -105,7 +105,7 @@ namespace Task
             KillGameObjectsWithCollision();
             MoveAll();
 
-            DoSceneUpdated?.Invoke(this, new EventArgs());
+            OnSceneUpdated?.Invoke();
         }
 
         private void KillGameObjectsWithCollision()
@@ -163,7 +163,7 @@ namespace Task
         public ConsoleView(IScene scene)
         {
             _scene = scene;
-            _scene.DoSceneUpdated += DoSceneUpdated;
+            _scene.OnSceneUpdated += SceneUpdated;
         }
 
         private static void PrintGameObject(GameObject gameObject)
@@ -172,7 +172,7 @@ namespace Task
             Console.Write(gameObject.Name);
         }
 
-        private void DoSceneUpdated(object sender, EventArgs e)
+        private void SceneUpdated()
         {
             foreach (var gameObject in _scene.GetAliveItems())
             {

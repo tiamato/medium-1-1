@@ -86,14 +86,9 @@ namespace Task
     public class Scene : IScene
     {
         private readonly List<GameObject> _items = new List<GameObject>();
-        private readonly Random _random;
+        private readonly Random _random = new Random();
 
         public event Action OnSceneUpdated;
-
-        public Scene()
-        {
-            _random = new Random();
-        }
 
         public void AddGameObject(GameObject gameObject)
         {
@@ -146,7 +141,7 @@ namespace Task
 
         public void StartConsoleGameCycle()
         {
-            var sceneView = new ConsoleView(_scene);
+            var consoleView = new ConsoleView(_scene);
 
             while (true)
             {

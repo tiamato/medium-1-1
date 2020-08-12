@@ -158,7 +158,7 @@ namespace Task
         public ConsoleView(IScene scene)
         {
             _scene = scene;
-            _scene.OnSceneUpdated += SceneUpdated;
+            _scene.OnSceneUpdated += PrintAliveGameObjects;
         }
 
         private static void PrintGameObject(GameObject gameObject)
@@ -167,7 +167,7 @@ namespace Task
             Console.Write(gameObject.Name);
         }
 
-        private void SceneUpdated()
+        private void PrintAliveGameObjects()
         {
             foreach (var gameObject in _scene.GetAliveItems())
             {

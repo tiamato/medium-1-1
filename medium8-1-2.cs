@@ -124,7 +124,7 @@ namespace Task
         private void KillGameObjectsWithCollision()
         {
             var itemsWithCollision = _items
-                .GroupBy(gameObject => new {gameObject.XCoordinate, gameObject.YCoordinate})
+                .GroupBy(gameObject => new { X = gameObject.XCoordinate.Value, Y = gameObject.YCoordinate.Value })
                 .Where(grouping => grouping.Count() > 1)
                 .SelectMany(grouping => grouping);
 
@@ -151,7 +151,7 @@ namespace Task
     public class SceneController
     {
         private readonly IScene _scene;
-        
+
         public SceneController(IScene scene)
         {
             _scene = scene;

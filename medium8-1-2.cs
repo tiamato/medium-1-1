@@ -44,6 +44,16 @@ namespace Task
                 Value = 0;
             }
         }
+
+        public int CompareTo(Coordinate coordinate)
+        {
+            if (coordinate == null)
+            {
+                return 1;
+            }
+
+            return Value.CompareTo(coordinate.Value);
+        }
     }
 
     public class StepRange
@@ -62,7 +72,7 @@ namespace Task
         }
     }
 
-    public class GameObject
+    public class GameObject : IComparable
     {
         public readonly Coordinate XCoordinate;
         public readonly Coordinate YCoordinate;
@@ -90,18 +100,41 @@ namespace Task
             XCoordinate.RandomStep(random, _stepRange.MinX, _stepRange.MaxX);
             YCoordinate.RandomStep(random, _stepRange.MinY, _stepRange.MaxY);
         }
+
+        public bool IsCollisionWith(GameObject gameObject)
+        {
+            if (gameObject == null)
+            {
+                return false;
+            }
+
+            return CompareTo(gameObject) == 0;
+        }
+
+        private int CompareTo(GameObject gameObject)
+        {
+            int compareX = XCoordinate.CompareTo(gameObject.XCoordinate);
+
+            if (compareX != 0)
+            {
+                return compareX;
+            }
+
+            return YCoordinate.CompareTo(gameObject.YCoordinate);
+        }
+
+        public int CompareTo(object gameObject)
+        {
+            if (gameObject == null)
+            {
+                return 1;
+            }
+
+            return CompareTo((GameObject)gameObject);
+        }
     }
 
-    public interface IScene
-    {
-        IEnumerable<GameObject> GetAliveItems();
-
-        event Action OnSceneUpdated;
-
-        void UpdateScene();
-    }
-
-    public class Scene : IScene
+    public class Scene
     {
         private readonly List<GameObject> _items = new List<GameObject>();
         private readonly Random _random = new Random();
@@ -123,14 +156,15 @@ namespace Task
 
         private void KillGameObjectsWithCollision()
         {
-            var itemsWithCollision = _items
-                .GroupBy(gameObject => new { X = gameObject.XCoordinate.Value, Y = gameObject.YCoordinate.Value })
-                .Where(grouping => grouping.Count() > 1)
-                .SelectMany(grouping => grouping);
+            _items.Sort();
 
-            foreach (var gameObject in itemsWithCollision)
+            for (int i = 1; i < _items.Count; i++)
             {
-                gameObject.Die();
+                if (_items[i - 1].IsCollisionWith(_items[i]))
+                {
+                    _items[i - 1].Die();
+                    _items[i].Die();
+                }
             }
         }
 
@@ -150,9 +184,9 @@ namespace Task
 
     public class SceneController
     {
-        private readonly IScene _scene;
+        private readonly Scene _scene;
 
-        public SceneController(IScene scene)
+        public SceneController(Scene scene)
         {
             _scene = scene;
         }
@@ -166,14 +200,13 @@ namespace Task
                 _scene.UpdateScene();
             }
         }
-
     }
 
     public class ConsoleView
     {
-        private readonly IScene _scene;
+        private readonly Scene _scene;
 
-        public ConsoleView(IScene scene)
+        public ConsoleView(Scene scene)
         {
             _scene = scene;
             _scene.OnSceneUpdated += PrintAliveGameObjects;

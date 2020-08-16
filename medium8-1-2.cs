@@ -29,7 +29,7 @@ namespace Task
 
     public class Coordinate
     {
-        public int Value { private set; get; }
+        public int Value { get; private set; }
 
         public Coordinate(int coordinate)
         {
@@ -77,7 +77,7 @@ namespace Task
         public readonly Coordinate XCoordinate;
         public readonly Coordinate YCoordinate;
         public readonly string Name;
-        public bool IsAlive { private set; get; }
+        public bool IsAlive { get; private set; }
         private readonly StepRange _stepRange;
 
         public GameObject(int x, int y, string name, bool isAlive, StepRange stepRange)

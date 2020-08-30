@@ -89,19 +89,6 @@ namespace Task
         public Vector2 Position { get; private set; }
         public bool IsAlive { get; private set; }
 
-        public void Move(Random random)
-        {
-            Position = new Vector2(
-                RandomStep(Position.X, random, _stepRange.MinX, _stepRange.MaxX),
-                RandomStep(Position.Y, random, _stepRange.MinY, _stepRange.MaxY)
-            );
-        }
-
-        public void Die()
-        {
-            IsAlive = false;
-        }
-
         public static int PositionComparison(GameObject x, GameObject y)
         {
             if (x == null && y == null)
@@ -120,6 +107,19 @@ namespace Task
             }
 
             return x.Position.CompareTo(y.Position);
+        }
+
+        public void Move(Random random)
+        {
+            Position = new Vector2(
+                RandomStep(Position.X, random, _stepRange.MinX, _stepRange.MaxX),
+                RandomStep(Position.Y, random, _stepRange.MinY, _stepRange.MaxY)
+            );
+        }
+
+        public void Die()
+        {
+            IsAlive = false;
         }
 
         public bool IsCollisionWith(GameObject gameObject)

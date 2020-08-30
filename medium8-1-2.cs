@@ -89,18 +89,6 @@ namespace Task
         public Vector2 Position { get; private set; }
         public bool IsAlive { get; private set; }
 
-        private static int RandomStep(int value, Random random, int stepMinValue, int stepMaxValue)
-        {
-            var result = value + random.Next(stepMinValue, stepMaxValue);
-
-            if (result < 0)
-            {
-                result = 0;
-            }
-
-            return result;
-        }
-
         public void Move(Random random)
         {
             Position = new Vector2(
@@ -143,6 +131,18 @@ namespace Task
 
             return Position.CompareTo(gameObject.Position) == 0;
         }
+
+        private static int RandomStep(int value, Random random, int stepMinValue, int stepMaxValue)
+        {
+            var result = value + random.Next(stepMinValue, stepMaxValue);
+
+            if (result < 0)
+            {
+                result = 0;
+            }
+
+            return result;
+        }
     }
 
     public class Scene
@@ -152,9 +152,22 @@ namespace Task
 
         public event Action OnSceneUpdated;
 
+        public IEnumerable<GameObject> GetAliveItems()
+        {
+            return _items.Where(item => item.IsAlive);
+        }
+
         public void AddGameObject(GameObject gameObject)
         {
             _items.Add(gameObject);
+        }
+
+        public void UpdateScene()
+        {
+            KillGameObjectsWithCollision();
+            MoveAll();
+
+            OnSceneUpdated?.Invoke();
         }
 
         private void KillGameObjectsWithCollision()
@@ -177,19 +190,6 @@ namespace Task
             {
                 gameObject.Move(_random);
             }
-        }
-
-        public void UpdateScene()
-        {
-            KillGameObjectsWithCollision();
-            MoveAll();
-
-            OnSceneUpdated?.Invoke();
-        }
-
-        public IEnumerable<GameObject> GetAliveItems()
-        {
-            return _items.Where(item => item.IsAlive);
         }
     }
 

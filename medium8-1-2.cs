@@ -8,62 +8,62 @@ namespace Task
     {
         private static void Main()
         {
-            var scene = InitScene();
-            var sceneController = new SceneController(scene);
+            var scene = CreateScene();
+            var sceneLoop = new SceneLoop(scene);
 
-            sceneController.StartConsoleGameCycle();
+            sceneLoop.StartConsoleGameCycle();
         }
 
-        private static Scene InitScene()
+        private static Scene CreateScene()
         {
-            var defaultStepRange = new StepRange(-1, 1, -1, 1);
+            var defaultStepRange = new StepRangeHolder(-1, 1, -1, 1);
 
             var scene = new Scene();
-            scene.AddGameObject(new GameObject(5, 5, "1", true, defaultStepRange));
-            scene.AddGameObject(new GameObject(10, 10, "2", true, defaultStepRange));
-            scene.AddGameObject(new GameObject(15, 15, "3", true, defaultStepRange));
+            scene.AddGameObject(new GameObject(5, 5, "1", defaultStepRange));
+            scene.AddGameObject(new GameObject(10, 10, "2", defaultStepRange));
+            scene.AddGameObject(new GameObject(15, 15, "3", defaultStepRange));
 
             return scene;
         }
     }
 
-    public class Coordinate
+    public class Vector2: IComparable<Vector2>
     {
-        public int Value { get; private set; }
-
-        public Coordinate(int coordinate)
+        public Vector2(int x, int y)
         {
-            Value = coordinate;
+            X = x;
+            Y = y;
         }
 
-        public void RandomStep(Random random, int stepMinValue, int stepMaxValue)
-        {
-            Value += random.Next(stepMinValue, stepMaxValue);
-            if (Value < 0)
-            {
-                Value = 0;
-            }
-        }
+        public int X { get; }
+        public int Y { get; }
 
-        public int CompareTo(Coordinate coordinate)
+        public int CompareTo(Vector2 vector)
         {
-            if (coordinate == null)
+            if (vector == null)
             {
                 return 1;
             }
 
-            return Value.CompareTo(coordinate.Value);
+            var compareX = X.CompareTo(vector.X);
+
+            if (compareX != 0)
+            {
+                return compareX;
+            }
+
+            return Y.CompareTo(vector.Y);
         }
     }
 
-    public class StepRange
+    public class StepRangeHolder
     {
-        public int MinX { get; }
-        public int MaxX { get; }
-        public int MinY { get; }
-        public int MaxY { get; }
+        public readonly int MinX;
+        public readonly int MaxX;
+        public readonly int MinY;
+        public readonly int MaxY;
 
-        public StepRange(int minX, int maxX, int minY, int maxY)
+        public StepRangeHolder(int minX, int maxX, int minY, int maxY)
         {
             MinX = minX;
             MaxX = maxX;
@@ -72,22 +72,41 @@ namespace Task
         }
     }
 
-    public class GameObject : IComparable
+    public class GameObject
     {
-        public readonly Coordinate XCoordinate;
-        public readonly Coordinate YCoordinate;
         public readonly string Name;
-        public bool IsAlive { get; private set; }
-        private readonly StepRange _stepRange;
+        private readonly StepRangeHolder _stepRange;
 
-        public GameObject(int x, int y, string name, bool isAlive, StepRange stepRange)
+        public GameObject(int x, int y, string name, StepRangeHolder stepRange)
         {
-            XCoordinate = new Coordinate(x);
-            YCoordinate = new Coordinate(y);
+            Position = new Vector2(x, y);
             Name = name;
-            IsAlive = isAlive;
+            IsAlive = true;
 
             _stepRange = stepRange;
+        }
+
+        public Vector2 Position { get; private set; }
+        public bool IsAlive { get; private set; }
+
+        private static int RandomStep(int value, Random random, int stepMinValue, int stepMaxValue)
+        {
+            var result = value + random.Next(stepMinValue, stepMaxValue);
+
+            if (result < 0)
+            {
+                result = 0;
+            }
+
+            return result;
+        }
+
+        public void Move(Random random)
+        {
+            Position = new Vector2(
+                RandomStep(Position.X, random, _stepRange.MinX, _stepRange.MaxX),
+                RandomStep(Position.Y, random, _stepRange.MinY, _stepRange.MaxY)
+            );
         }
 
         public void Die()
@@ -95,10 +114,24 @@ namespace Task
             IsAlive = false;
         }
 
-        public void RandomStep(Random random)
+        public static int PositionComparison(GameObject x, GameObject y)
         {
-            XCoordinate.RandomStep(random, _stepRange.MinX, _stepRange.MaxX);
-            YCoordinate.RandomStep(random, _stepRange.MinY, _stepRange.MaxY);
+            if (x == null && y == null)
+            {
+                return 0;
+            }
+
+            if (x == null)
+            {
+                return -1;
+            }
+
+            if (y == null)
+            {
+                return 1;
+            }
+
+            return x.Position.CompareTo(y.Position);
         }
 
         public bool IsCollisionWith(GameObject gameObject)
@@ -108,29 +141,7 @@ namespace Task
                 return false;
             }
 
-            return CompareTo(gameObject) == 0;
-        }
-
-        private int CompareTo(GameObject gameObject)
-        {
-            int compareX = XCoordinate.CompareTo(gameObject.XCoordinate);
-
-            if (compareX != 0)
-            {
-                return compareX;
-            }
-
-            return YCoordinate.CompareTo(gameObject.YCoordinate);
-        }
-
-        public int CompareTo(object gameObject)
-        {
-            if (gameObject == null)
-            {
-                return 1;
-            }
-
-            return CompareTo((GameObject)gameObject);
+            return Position.CompareTo(gameObject.Position) == 0;
         }
     }
 
@@ -146,17 +157,9 @@ namespace Task
             _items.Add(gameObject);
         }
 
-        public void UpdateScene()
-        {
-            KillGameObjectsWithCollision();
-            MoveAll();
-
-            OnSceneUpdated?.Invoke();
-        }
-
         private void KillGameObjectsWithCollision()
         {
-            _items.Sort();
+            _items.Sort(GameObject.PositionComparison);
 
             for (int i = 1; i < _items.Count; i++)
             {
@@ -172,8 +175,16 @@ namespace Task
         {
             foreach (var gameObject in _items)
             {
-                gameObject.RandomStep(_random);
+                gameObject.Move(_random);
             }
+        }
+
+        public void UpdateScene()
+        {
+            KillGameObjectsWithCollision();
+            MoveAll();
+
+            OnSceneUpdated?.Invoke();
         }
 
         public IEnumerable<GameObject> GetAliveItems()
@@ -182,11 +193,11 @@ namespace Task
         }
     }
 
-    public class SceneController
+    public class SceneLoop
     {
         private readonly Scene _scene;
 
-        public SceneController(Scene scene)
+        public SceneLoop(Scene scene)
         {
             _scene = scene;
         }
@@ -214,7 +225,7 @@ namespace Task
 
         private static void PrintGameObject(GameObject gameObject)
         {
-            Console.SetCursorPosition(gameObject.XCoordinate.Value, gameObject.YCoordinate.Value);
+            Console.SetCursorPosition(gameObject.Position.X, gameObject.Position.Y);
             Console.Write(gameObject.Name);
         }
 

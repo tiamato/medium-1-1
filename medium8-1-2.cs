@@ -15,7 +15,7 @@ namespace Task
 
         private static Scene CreateScene()
         {
-            var defaultStepRange = new StepRangeHolder(-1, 1, -1, 1);
+            var defaultStepRange = new StepRangeRestrictions(-1, 1, -1, 1);
 
             var scene = new Scene();
             scene.AddGameObject(new GameObject(5, 5, "1", defaultStepRange));
@@ -55,14 +55,14 @@ namespace Task
         }
     }
 
-    public class StepRangeHolder
+    public class StepRangeRestrictions
     {
         public readonly int MinX;
         public readonly int MaxX;
         public readonly int MinY;
         public readonly int MaxY;
 
-        public StepRangeHolder(int minX, int maxX, int minY, int maxY)
+        public StepRangeRestrictions(int minX, int maxX, int minY, int maxY)
         {
             MinX = minX;
             MaxX = maxX;
@@ -74,14 +74,14 @@ namespace Task
     public class GameObject
     {
         public readonly string Name;
-        private readonly StepRangeHolder _stepRange;
+        private readonly StepRangeRestrictions _stepRangeRestrictions;
 
-        public GameObject(int x, int y, string name, StepRangeHolder stepRange)
+        public GameObject(int x, int y, string name, StepRangeRestrictions stepRangeRestrictions)
         {
             Position = new Vector2(x, y);
             Name = name;
 
-            _stepRange = stepRange;
+            _stepRangeRestrictions = stepRangeRestrictions;
         }
 
         public Vector2 Position { get; private set; }
@@ -109,8 +109,8 @@ namespace Task
         public void Move(Random random)
         {
             Position = new Vector2(
-                RandomStep(Position.X, random, _stepRange.MinX, _stepRange.MaxX),
-                RandomStep(Position.Y, random, _stepRange.MinY, _stepRange.MaxY)
+                RandomStep(Position.X, random, _stepRangeRestrictions.MinX, _stepRangeRestrictions.MaxX),
+                RandomStep(Position.Y, random, _stepRangeRestrictions.MinY, _stepRangeRestrictions.MaxY)
             );
         }
 

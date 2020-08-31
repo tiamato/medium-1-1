@@ -15,12 +15,12 @@ namespace Task
 
         private static Scene CreateScene()
         {
-            var defaultStepRange = new StepRangeRestrictions(-1, 1, -1, 1);
+            var stepRangeRestrictions = new StepRangeRestrictions(-1, 1, -1, 1);
 
             var scene = new Scene();
-            scene.AddGameObject(new GameObject(5, 5, "1", defaultStepRange));
-            scene.AddGameObject(new GameObject(10, 10, "2", defaultStepRange));
-            scene.AddGameObject(new GameObject(15, 15, "3", defaultStepRange));
+            scene.AddGameObject(new GameObject(5, 5, "1", stepRangeRestrictions));
+            scene.AddGameObject(new GameObject(10, 10, "2", stepRangeRestrictions));
+            scene.AddGameObject(new GameObject(15, 15, "3", stepRangeRestrictions));
 
             return scene;
         }

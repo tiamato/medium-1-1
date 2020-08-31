@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Task
 {
@@ -27,7 +26,7 @@ namespace Task
         }
     }
 
-    public class Vector2: IComparable<Vector2>
+    public class Vector2 : IComparable<Vector2>
     {
         public Vector2(int x, int y)
         {
@@ -81,13 +80,11 @@ namespace Task
         {
             Position = new Vector2(x, y);
             Name = name;
-            IsAlive = true;
 
             _stepRange = stepRange;
         }
 
         public Vector2 Position { get; private set; }
-        public bool IsAlive { get; private set; }
 
         public static int PositionComparison(GameObject x, GameObject y)
         {
@@ -115,11 +112,6 @@ namespace Task
                 RandomStep(Position.X, random, _stepRange.MinX, _stepRange.MaxX),
                 RandomStep(Position.Y, random, _stepRange.MinY, _stepRange.MaxY)
             );
-        }
-
-        public void Die()
-        {
-            IsAlive = false;
         }
 
         public bool IsCollisionWith(GameObject gameObject)
@@ -150,12 +142,9 @@ namespace Task
         private readonly List<GameObject> _items = new List<GameObject>();
         private readonly Random _random = new Random();
 
-        public event Action OnSceneUpdated;
+        public IEnumerable<GameObject> Items => _items;
 
-        public IEnumerable<GameObject> GetAliveItems()
-        {
-            return _items.Where(item => item.IsAlive);
-        }
+        public event Action OnSceneUpdated;
 
         public void AddGameObject(GameObject gameObject)
         {
@@ -178,8 +167,15 @@ namespace Task
             {
                 if (_items[i - 1].IsCollisionWith(_items[i]))
                 {
-                    _items[i - 1].Die();
-                    _items[i].Die();
+                    do
+                    {
+                        _items.Remove(_items[i]);
+                    }
+                    while (i < _items.Count && _items[i - 1].IsCollisionWith(_items[i]));
+
+                    _items.Remove(_items[i - 1]);
+
+                    i--;
                 }
             }
         }
@@ -231,7 +227,7 @@ namespace Task
 
         private void PrintAliveGameObjects()
         {
-            foreach (var gameObject in _scene.GetAliveItems())
+            foreach (var gameObject in _scene.Items)
             {
                 PrintGameObject(gameObject);
             }

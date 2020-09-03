@@ -26,7 +26,7 @@ namespace Task
         }
     }
 
-    public class Vector2 : IComparable<Vector2>
+    public class Vector2
     {
         public Vector2(int x, int y)
         {
@@ -37,21 +37,14 @@ namespace Task
         public int X { get; }
         public int Y { get; }
 
-        public int CompareTo(Vector2 vector)
+        public bool Equals(Vector2 vector)
         {
             if (vector == null)
             {
-                return 1;
+                return false;
             }
 
-            var compareX = X.CompareTo(vector.X);
-
-            if (compareX != 0)
-            {
-                return compareX;
-            }
-
-            return Y.CompareTo(vector.Y);
+            return X.Equals(vector.X) && Y.Equals(vector.Y);
         }
     }
 
@@ -86,26 +79,6 @@ namespace Task
 
         public Vector2 Position { get; private set; }
 
-        public static int PositionComparison(GameObject x, GameObject y)
-        {
-            if (x == null && y == null)
-            {
-                return 0;
-            }
-
-            if (x == null)
-            {
-                return -1;
-            }
-
-            if (y == null)
-            {
-                return 1;
-            }
-
-            return x.Position.CompareTo(y.Position);
-        }
-
         public void Move(Random random)
         {
             Position = new Vector2(
@@ -121,7 +94,7 @@ namespace Task
                 return false;
             }
 
-            return Position.CompareTo(gameObject.Position) == 0;
+            return Position.Equals(gameObject.Position);
         }
 
         private static int RandomStep(int value, Random random, int stepMinValue, int stepMaxValue)
@@ -161,21 +134,22 @@ namespace Task
 
         private void KillGameObjectsWithCollision()
         {
-            _items.Sort(GameObject.PositionComparison);
-
-            for (int i = 1; i < _items.Count; i++)
+            for (int i = 0; i < _items.Count; i++)
             {
-                if (_items[i - 1].IsCollisionWith(_items[i]))
+                var currentInCollision = false;
+
+                for (int j = i + 1; j < _items.Count; j++)
                 {
-                    do
+                    if (_items[i].IsCollisionWith(_items[j]))
                     {
-                        _items.Remove(_items[i]);
+                        currentInCollision = true;
+                        _items.Remove(_items[j--]);
                     }
-                    while (i < _items.Count && _items[i - 1].IsCollisionWith(_items[i]));
+                }
 
-                    _items.Remove(_items[i - 1]);
-
-                    i--;
+                if (currentInCollision)
+                {
+                    _items.Remove(_items[i--]);
                 }
             }
         }

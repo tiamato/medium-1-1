@@ -62,6 +62,12 @@ namespace Task
             return gameObject != null && Position.Equals(gameObject.Position);
         }
 
+        public void Print()
+        {
+            Console.SetCursorPosition(Position.X, Position.Y);
+            Console.Write(_name);
+        }
+
         private static int RandomStep(int value, Random random)
         {
             var result = value + random.Next(-1, 1);
@@ -71,13 +77,6 @@ namespace Task
 
             return result;
         }
-
-        public void Print()
-        {
-            Console.SetCursorPosition(Position.X, Position.Y);
-            Console.Write(_name);
-        }
-
     }
 
     public class Scene

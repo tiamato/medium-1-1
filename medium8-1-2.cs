@@ -8,25 +8,22 @@ namespace Task
         private static void Main()
         {
             var scene = CreateScene();
-            var sceneLoop = new SceneLoop(scene);
 
-            sceneLoop.StartConsoleGameCycle();
+            while (true) scene.UpdateScene();
         }
 
         private static Scene CreateScene()
         {
-            var stepRangeRestrictions = new StepRangeRestrictions(-1, 1, -1, 1);
-
             var scene = new Scene();
-            scene.AddGameObject(new GameObject(5, 5, "1", stepRangeRestrictions));
-            scene.AddGameObject(new GameObject(10, 10, "2", stepRangeRestrictions));
-            scene.AddGameObject(new GameObject(15, 15, "3", stepRangeRestrictions));
+            scene.AddGameObject(new GameObject(5, 5, "1"));
+            scene.AddGameObject(new GameObject(10, 10, "2"));
+            scene.AddGameObject(new GameObject(15, 15, "3"));
 
             return scene;
         }
     }
 
-    public class Vector2
+    public struct Vector2
     {
         public Vector2(int x, int y)
         {
@@ -37,77 +34,50 @@ namespace Task
         public int X { get; }
         public int Y { get; }
 
-        public bool Equals(Vector2 vector)
-        {
-            if (vector == null)
-            {
-                return false;
-            }
-
-            return X.Equals(vector.X) && Y.Equals(vector.Y);
-        }
-    }
-
-    public class StepRangeRestrictions
-    {
-        public readonly int MinX;
-        public readonly int MaxX;
-        public readonly int MinY;
-        public readonly int MaxY;
-
-        public StepRangeRestrictions(int minX, int maxX, int minY, int maxY)
-        {
-            MinX = minX;
-            MaxX = maxX;
-            MinY = minY;
-            MaxY = maxY;
-        }
+        public bool Equals(Vector2 vector) => X.Equals(vector.X) && Y.Equals(vector.Y);
     }
 
     public class GameObject
     {
-        public readonly string Name;
-        private readonly StepRangeRestrictions _stepRangeRestrictions;
+        private readonly string _name;
 
-        public GameObject(int x, int y, string name, StepRangeRestrictions stepRangeRestrictions)
+        public GameObject(int x, int y, string name)
         {
             Position = new Vector2(x, y);
-            Name = name;
-
-            _stepRangeRestrictions = stepRangeRestrictions;
+            _name = name;
         }
 
-        public Vector2 Position { get; private set; }
+        private Vector2 Position { get; set; }
 
         public void Move(Random random)
         {
             Position = new Vector2(
-                RandomStep(Position.X, random, _stepRangeRestrictions.MinX, _stepRangeRestrictions.MaxX),
-                RandomStep(Position.Y, random, _stepRangeRestrictions.MinY, _stepRangeRestrictions.MaxY)
+                RandomStep(Position.X, random),
+                RandomStep(Position.Y, random)
             );
         }
 
         public bool IsCollisionWith(GameObject gameObject)
         {
-            if (gameObject == null)
-            {
-                return false;
-            }
-
-            return Position.Equals(gameObject.Position);
+            return gameObject != null && Position.Equals(gameObject.Position);
         }
 
-        private static int RandomStep(int value, Random random, int stepMinValue, int stepMaxValue)
+        private static int RandomStep(int value, Random random)
         {
-            var result = value + random.Next(stepMinValue, stepMaxValue);
+            var result = value + random.Next(-1, 1);
 
             if (result < 0)
-            {
                 result = 0;
-            }
 
             return result;
         }
+
+        public void Print()
+        {
+            Console.SetCursorPosition(Position.X, Position.Y);
+            Console.Write(_name);
+        }
+
     }
 
     public class Scene
@@ -115,96 +85,42 @@ namespace Task
         private readonly List<GameObject> _items = new List<GameObject>();
         private readonly Random _random = new Random();
 
-        public IEnumerable<GameObject> Items => _items;
-
-        public event Action OnSceneUpdated;
-
-        public void AddGameObject(GameObject gameObject)
-        {
-            _items.Add(gameObject);
-        }
+        public void AddGameObject(GameObject gameObject) => _items.Add(gameObject);
 
         public void UpdateScene()
         {
             KillGameObjectsWithCollision();
             MoveAll();
 
-            OnSceneUpdated?.Invoke();
+            PrintAliveGameObjects();
+        }
+
+        private void PrintAliveGameObjects()
+        {
+            foreach (var gameObject in _items) gameObject.Print();
         }
 
         private void KillGameObjectsWithCollision()
         {
-            for (int i = 0; i < _items.Count; i++)
+            var itemsToRemove = new HashSet<GameObject>();
+
+            foreach (var item in _items)
             {
-                var currentInCollision = false;
-
-                for (int j = i + 1; j < _items.Count; j++)
+                foreach (var anotherItem in _items)
                 {
-                    if (_items[i].IsCollisionWith(_items[j]))
-                    {
-                        currentInCollision = true;
-                        _items.Remove(_items[j--]);
-                    }
-                }
-
-                if (currentInCollision)
-                {
-                    _items.Remove(_items[i--]);
+                    if (!item.Equals(anotherItem) && item.IsCollisionWith(anotherItem))
+                        itemsToRemove.Add(item);
                 }
             }
+
+            foreach (var item in itemsToRemove)
+                _items.Remove(item);
         }
 
         private void MoveAll()
         {
             foreach (var gameObject in _items)
-            {
                 gameObject.Move(_random);
-            }
-        }
-    }
-
-    public class SceneLoop
-    {
-        private readonly Scene _scene;
-
-        public SceneLoop(Scene scene)
-        {
-            _scene = scene;
-        }
-
-        public void StartConsoleGameCycle()
-        {
-            var consoleView = new ConsoleView(_scene);
-
-            while (true)
-            {
-                _scene.UpdateScene();
-            }
-        }
-    }
-
-    public class ConsoleView
-    {
-        private readonly Scene _scene;
-
-        public ConsoleView(Scene scene)
-        {
-            _scene = scene;
-            _scene.OnSceneUpdated += PrintAliveGameObjects;
-        }
-
-        private static void PrintGameObject(GameObject gameObject)
-        {
-            Console.SetCursorPosition(gameObject.Position.X, gameObject.Position.Y);
-            Console.Write(gameObject.Name);
-        }
-
-        private void PrintAliveGameObjects()
-        {
-            foreach (var gameObject in _scene.Items)
-            {
-                PrintGameObject(gameObject);
-            }
         }
     }
 }

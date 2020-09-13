@@ -39,6 +39,9 @@ namespace Task
 
     public class GameObject
     {
+        private const int MinBoundaryRandomStepInclusive = -1;
+        private const int MaxBoundaryRandomStepExclusive = 1;
+
         private readonly string _name;
 
         public GameObject(int x, int y, string name)
@@ -70,7 +73,8 @@ namespace Task
 
         private static int RandomStep(int value, Random random)
         {
-            var result = value + random.Next(-1, 1);
+            // Интервал изменения [min, max); 
+            var result = value + random.Next(MinBoundaryRandomStepInclusive, MaxBoundaryRandomStepExclusive);
 
             if (result < 0)
                 result = 0;

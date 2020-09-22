@@ -9,7 +9,7 @@ namespace Task
         {
             var scene = CreateScene();
 
-            while (true) scene.UpdateScene();
+            while (true) scene.Update();
         }
 
         private static Scene CreateScene()
@@ -35,14 +35,19 @@ namespace Task
         public int Y { get; }
 
         public bool Equals(Vector2 vector) => X.Equals(vector.X) && Y.Equals(vector.Y);
+
+        public static Vector2 operator +(Vector2 v1, Vector2 v2) => new Vector2(v1.X + v2.X, v1.Y + v2.Y);
+    }
+
+    public static class RandomExtension
+    {
+        public static Vector2 GetDirection(this Random random) => new Vector2(random.Next(-1, 1), random.Next(-1, 1)); 
     }
 
     public class GameObject
     {
-        private const int MinBoundaryRandomStepInclusive = -1;
-        private const int MaxBoundaryRandomStepExclusive = 1;
-
         private readonly string _name;
+        private Vector2 _position;
 
         public GameObject(int x, int y, string name)
         {
@@ -50,36 +55,20 @@ namespace Task
             _name = name;
         }
 
-        private Vector2 Position { get; set; }
-
-        public void Move(Random random)
+        private Vector2 Position
         {
-            Position = new Vector2(
-                RandomStep(Position.X, random),
-                RandomStep(Position.Y, random)
-            );
+            get => _position;
+            set => _position = new Vector2(value.X < 0 ? 0 : value.X, value.Y < 0 ? 0 : value.Y);
         }
 
-        public bool IsCollisionWith(GameObject gameObject)
-        {
-            return gameObject != null && Position.Equals(gameObject.Position);
-        }
+        public void Move(Random random) => Position += random.GetDirection();
+
+        public bool IsCollisionWith(GameObject gameObject) => gameObject != null && _position.Equals(gameObject._position);
 
         public void Print()
         {
-            Console.SetCursorPosition(Position.X, Position.Y);
+            Console.SetCursorPosition(_position.X, _position.Y);
             Console.Write(_name);
-        }
-
-        private static int RandomStep(int value, Random random)
-        {
-            // Интервал изменения [min, max); 
-            var result = value + random.Next(MinBoundaryRandomStepInclusive, MaxBoundaryRandomStepExclusive);
-
-            if (result < 0)
-                result = 0;
-
-            return result;
         }
     }
 
@@ -90,7 +79,7 @@ namespace Task
 
         public void AddGameObject(GameObject gameObject) => _items.Add(gameObject);
 
-        public void UpdateScene()
+        public void Update()
         {
             KillGameObjectsWithCollision();
             MoveAll();

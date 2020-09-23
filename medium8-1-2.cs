@@ -23,7 +23,7 @@ namespace Task
         }
     }
 
-    public struct Vector2
+    public class Vector2
     {
         public Vector2(int x, int y)
         {
@@ -34,9 +34,14 @@ namespace Task
         public int X { get; }
         public int Y { get; }
 
-        public bool Equals(Vector2 vector) => X.Equals(vector.X) && Y.Equals(vector.Y);
+        public bool Equals(Vector2 vector) => vector != null && (X.Equals(vector.X) && Y.Equals(vector.Y));
+    }
 
-        public static Vector2 operator +(Vector2 v1, Vector2 v2) => new Vector2(v1.X + v2.X, v1.Y + v2.Y);
+    public class Position : Vector2
+    {
+        public Position(int x, int y) : base(x < 0 ? 0 : x, y < 0 ? 0 : y) { }
+
+        public static Position operator +(Position v1, Vector2 v2) => new Position(v1.X + v2.X, v1.Y + v2.Y);
     }
 
     public static class RandomExtension
@@ -47,27 +52,25 @@ namespace Task
     public class GameObject
     {
         private readonly string _name;
-        private Vector2 _position;
 
         public GameObject(int x, int y, string name)
         {
-            Position = new Vector2(x, y);
+            Position = new Position(x, y);
             _name = name;
         }
 
-        private Vector2 Position
+        private Position Position { get; set; }
+
+        public void Move(Random random)
         {
-            get => _position;
-            set => _position = new Vector2(value.X < 0 ? 0 : value.X, value.Y < 0 ? 0 : value.Y);
+            Position += random.GetDirection();
         }
 
-        public void Move(Random random) => Position += random.GetDirection();
-
-        public bool IsCollisionWith(GameObject gameObject) => gameObject != null && _position.Equals(gameObject._position);
+        public bool IsCollisionWith(GameObject gameObject) => gameObject != null && Position.Equals(gameObject.Position);
 
         public void Print()
         {
-            Console.SetCursorPosition(_position.X, _position.Y);
+            Console.SetCursorPosition(Position.X, Position.Y);
             Console.Write(_name);
         }
     }
@@ -84,10 +87,10 @@ namespace Task
             KillGameObjectsWithCollision();
             MoveAll();
 
-            PrintAliveGameObjects();
+            Print();
         }
 
-        private void PrintAliveGameObjects()
+        private void Print()
         {
             foreach (var gameObject in _items) gameObject.Print();
         }
